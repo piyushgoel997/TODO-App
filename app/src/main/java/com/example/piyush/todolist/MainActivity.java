@@ -1,6 +1,5 @@
 package com.example.piyush.todolist;
 
-import android.annotation.TargetApi;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
@@ -8,14 +7,10 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.graphics.Color;
-import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -48,15 +43,12 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-//        Log.d(TAG, "onCreate: called");
-
         taskET = (EditText) findViewById(R.id.task_et);
         dateET = (Button) findViewById(R.id.date_et);
         addBtn = (Button) findViewById(R.id.add_btn);
         delBtn = (Button) findViewById(R.id.delete_btn);
         listRV = (RecyclerView) findViewById(R.id.list_rv);
 
-        dateET.setText("");
         dateET.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -65,9 +57,9 @@ public class MainActivity extends AppCompatActivity {
         });
 
         updateRV();
-        Log.d(TAG, "onCreate: done");
     }
 
+    // gets tasks from the db sorted according to the deadline date and puts them in an array list
     public ArrayList<Task> getTasksListFromDB() {
 
         ArrayList<Task> tasksList = new ArrayList<>();
@@ -104,22 +96,9 @@ public class MainActivity extends AppCompatActivity {
             myDatabase.delete(TasksTable.TABLE_NAME, TasksTable.Columns._ID + " = " + taskIDList.get(i),null);
         }
         updateRV();
-//        logOfTasks();
     }
 
-//    public void logOfTasks(){
-//        SQLiteDatabase db = MyDbOpener.openReadableDatabase(this);
-//        String[] str = {TasksTable.Columns._ID, TasksTable.Columns.taskName,TasksTable.Columns.isDone};
-//        Cursor c = db.query(TasksTable.TABLE_NAME, str, null, null, null, null, null);
-//        while(c.moveToNext()){
-//            Log.d(TAG, "logOfTasks: "
-//            + c.getInt(c.getColumnIndex(TasksTable.Columns._ID))
-//            + c.getString(c.getColumnIndex(TasksTable.Columns.taskName))
-//            + c.getInt(c.getColumnIndex(TasksTable.Columns.isDone)));
-//        }
-//        c.close();
-//    }
-
+    // return an array list of ids of tasks whose isDone is true in the database
     public ArrayList<Integer> getCompletedTaskIDFromDB() {
         ArrayList<Integer> completedTasksID = new ArrayList<>();
 
@@ -137,6 +116,7 @@ public class MainActivity extends AppCompatActivity {
         return completedTasksID;
     }
 
+    // sets isDone = true in the database for the task whose id is sent into the function
     public void setDone(int id) {
         Log.d(TAG, "setDone: " + id);
         SQLiteDatabase db = MyDbOpener.openWritableDatabase(this);
@@ -161,9 +141,6 @@ public class MainActivity extends AppCompatActivity {
             taskName = (TextView) itemView.findViewById(R.id.task_name_et);
             taskDate = (TextView) itemView.findViewById(R.id.deadline_et);
         }
-
-
-
     }
 
     public class TaskListAdapter extends RecyclerView.Adapter<TaskViewHolder> {
@@ -180,7 +157,6 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     int id = tvh.id;
-                    Log.d(TAG, "onClick: " + id);
                     setDone(id);
                 }
             });
@@ -189,16 +165,13 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(TaskViewHolder holder, int position) {
-//            Log.d(TAG, "onBindViewHolder: " + position);
             holder.taskName.setText(tasksList.get(position).getTaskName());
             holder.taskDate.setText(tasksList.get(position).getDeadline());
             holder.id = tasksList.get(position).getTaskID();
-            Log.d(TAG, "onBindViewHolder: " + tasksList.get(position).getTaskID());
             if(tasksList.get(position).isDone()){
                 holder.taskDate.setTextColor(getColor(R.color.colorAccent));
                 holder.taskName.setTextColor(getColor(R.color.colorAccent));
             }
-
         }
 
         @Override
@@ -207,11 +180,8 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // adds a task to the database
     public void addTask(View view) {
-
-//        Log.d(TAG, "addTask: called");
-
-
         // DB
         SQLiteDatabase myDatabase = MyDbOpener.openWritableDatabase(this);
 
@@ -221,13 +191,13 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(MainActivity.this, "Please Enter Task to be done and then press the Add button", Toast.LENGTH_SHORT).show();
             return;
         }
-        values.put(TasksTable.Columns.taskName, String.valueOf(taskET.getText()));
-
-
         if (dateET.getText() == null || dateET.getText().toString().equals("")) {
             Toast.makeText(MainActivity.this, "Please the deadline and then press the Add button", Toast.LENGTH_SHORT).show();
             return;
         }
+
+        values.put(TasksTable.Columns.taskName, String.valueOf(taskET.getText()));
+
         values.put(TasksTable.Columns.deadLine, String.valueOf(dateET.getText()));
 
         values.put(TasksTable.Columns.isDone, TasksTable.TASK_NOT_DONE);
@@ -239,22 +209,15 @@ public class MainActivity extends AppCompatActivity {
 
         dateET.setText("");
         taskET.setText("");
-
-//        Log.d(TAG, "addTask: completed");
     }
 
+    // called whenever any change is made
+    // basically makes the recycler view again
     private void updateRV() {
-
-//        Log.d(TAG, "updateRV: called");
-
-//        ArrayList<Task> tasksList = getTasksListFromDB();
-
         TaskListAdapter taskListAdapter = new TaskListAdapter();
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
         listRV.setLayoutManager(layoutManager);
         listRV.setAdapter(taskListAdapter);
-
-//        Log.d(TAG, "updateRV: completed");
     }
 
     public static class DatePickerFragment extends DialogFragment
@@ -273,11 +236,21 @@ public class MainActivity extends AppCompatActivity {
         }
 
         public void onDateSet(DatePicker view, int year, int month, int day) {
-            // Do something with the date chosen by the user
             final Calendar c = Calendar.getInstance();
-            if(year < c.get(Calendar.YEAR) || month < c.get(Calendar.MONTH) || day < c.get(Calendar.DATE)){
+            // Checks that the entered date is in the future
+            if (year < c.get(Calendar.YEAR)) {
                 showToast(getActivity().getApplicationContext(),"Please Enter A Valid Date");
                 return;
+            } else if (year == c.get(Calendar.YEAR)) {
+                if (month < c.get(Calendar.MONTH)) {
+                    showToast(getActivity().getApplicationContext(),"Please Enter A Valid Date");
+                    return;
+                } else if (month == c.get(Calendar.MONTH)) {
+                    if (day < c.get(Calendar.DAY_OF_MONTH)) {
+                        showToast(getActivity().getApplicationContext(),"Please Enter A Valid Date");
+                        return;
+                    }
+                }
             }
             dateET.setText(day+"/"+month+"/"+year);
         }
