@@ -8,6 +8,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
 import android.os.Build;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -62,26 +63,6 @@ public class MainActivity extends AppCompatActivity {
                 showDatePickerDialog(v);
             }
         });
-//        dateET.addTextChangedListener(new TextWatcher() {
-//            @Override
-//            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-//            }
-//
-//            @Override
-//            public void onTextChanged(CharSequence s, int start, int before, int count) {
-//
-//                if(s.toString().length() == 2 || s.toString().length() == 5 ){
-//                    dateET.setText(dateET.getText() + "/");
-//                }
-//            }
-//
-//            @Override
-//            public void afterTextChanged(Editable s) {
-//
-//            }
-//        });
-
-
 
         updateRV();
         Log.d(TAG, "onCreate: done");
@@ -93,19 +74,7 @@ public class MainActivity extends AppCompatActivity {
 
         SQLiteDatabase myDatabase = MyDbOpener.openReadableDatabase(this);
         String[] projections = {TasksTable.Columns._ID, TasksTable.Columns.taskName, TasksTable.Columns.deadLine, TasksTable.Columns.isDone};
-        Cursor c = myDatabase.query(TasksTable.TABLE_NAME, projections, null, null, null, null, null);
-
-//        boolean isDone;
-//        if (c.getInt(c.getColumnIndex(TasksTable.Columns.isDone)) == TasksTable.TASK_NOT_DONE) {
-//            isDone = false;
-//        } else {
-//            isDone = true;
-//        }
-//        String name = c.getString(c.getColumnIndex(TasksTable.Columns.taskName));
-//        String dl = c.getString(c.getColumnIndex(TasksTable.Columns.deadLine));
-//        int id = c.getInt(c.getColumnIndex(TasksTable.Columns._ID));
-//        Task currTask = new Task(isDone, dl, name, id);
-//        tasksList.add(currTask);
+        Cursor c = myDatabase.query(TasksTable.TABLE_NAME, projections, null, null, null, null, TasksTable.Columns.deadLine);
 
         while (c.moveToNext()) {
             boolean isDone;
@@ -135,21 +104,21 @@ public class MainActivity extends AppCompatActivity {
             myDatabase.delete(TasksTable.TABLE_NAME, TasksTable.Columns._ID + " = " + taskIDList.get(i),null);
         }
         updateRV();
-        logOfTasks();
+//        logOfTasks();
     }
 
-    public void logOfTasks(){
-        SQLiteDatabase db = MyDbOpener.openReadableDatabase(this);
-        String[] str = {TasksTable.Columns._ID, TasksTable.Columns.taskName,TasksTable.Columns.isDone};
-        Cursor c = db.query(TasksTable.TABLE_NAME, str, null, null, null, null, null);
-        while(c.moveToNext()){
-            Log.d(TAG, "logOfTasks: "
-            + c.getInt(c.getColumnIndex(TasksTable.Columns._ID))
-            + c.getString(c.getColumnIndex(TasksTable.Columns.taskName))
-            + c.getInt(c.getColumnIndex(TasksTable.Columns.isDone)));
-        }
-        c.close();
-    }
+//    public void logOfTasks(){
+//        SQLiteDatabase db = MyDbOpener.openReadableDatabase(this);
+//        String[] str = {TasksTable.Columns._ID, TasksTable.Columns.taskName,TasksTable.Columns.isDone};
+//        Cursor c = db.query(TasksTable.TABLE_NAME, str, null, null, null, null, null);
+//        while(c.moveToNext()){
+//            Log.d(TAG, "logOfTasks: "
+//            + c.getInt(c.getColumnIndex(TasksTable.Columns._ID))
+//            + c.getString(c.getColumnIndex(TasksTable.Columns.taskName))
+//            + c.getInt(c.getColumnIndex(TasksTable.Columns.isDone)));
+//        }
+//        c.close();
+//    }
 
     public ArrayList<Integer> getCompletedTaskIDFromDB() {
         ArrayList<Integer> completedTasksID = new ArrayList<>();
@@ -161,32 +130,30 @@ public class MainActivity extends AppCompatActivity {
                 TasksTable.Columns.isDone + " = " + TasksTable.TASK_DONE,
                 null,null,null,null);
 
-//        c.moveToFirst();
-//
-//        completedTasksID.add(c.getInt(c.getColumnIndex(TasksTable.Columns._ID)));
-
         while (c.moveToNext()){
             completedTasksID.add(c.getInt(c.getColumnIndex(TasksTable.Columns._ID)));
-//            Log.d(TAG, "getCompletedTaskIDFromDB: " + c.getInt(c.getColumnIndex(TasksTable.Columns._ID)));
         }
         c.close();
         return completedTasksID;
     }
 
     public void setDone(int id) {
-//        Log.d(TAG, "setDone: " + id);
+        Log.d(TAG, "setDone: " + id);
         SQLiteDatabase db = MyDbOpener.openWritableDatabase(this);
 
         ContentValues value = new ContentValues();
         value.put(TasksTable.Columns.isDone, TasksTable.TASK_DONE);
 
         db.update(TasksTable.TABLE_NAME, value, TasksTable.Columns._ID + " = " + id, null);
+
+        updateRV();
     }
 
     public class TaskViewHolder extends RecyclerView.ViewHolder {
 
         TextView taskName;
         TextView taskDate;
+        int id;
 
         public TaskViewHolder(View itemView) {
             super(itemView);
@@ -194,42 +161,39 @@ public class MainActivity extends AppCompatActivity {
             taskName = (TextView) itemView.findViewById(R.id.task_name_et);
             taskDate = (TextView) itemView.findViewById(R.id.deadline_et);
         }
+
+
+
     }
 
     public class TaskListAdapter extends RecyclerView.Adapter<TaskViewHolder> {
 
         ArrayList<Task> tasksList = getTasksListFromDB();
 
-//        public TaskListAdapter(ArrayList<Task> tasksList) {
-//            this.tasksList = tasksList;
-//        }
-
         @Override
         public TaskViewHolder onCreateViewHolder(final ViewGroup parent, int viewType) {
 
             LayoutInflater layoutInflater = getLayoutInflater();
-            View itemView = layoutInflater.inflate(R.layout.list_item, null);
+            final View itemView = layoutInflater.inflate(R.layout.list_item, null);
+            final TaskViewHolder tvh = new TaskViewHolder(itemView);
             itemView.setOnClickListener(new View.OnClickListener() {
-                @TargetApi(Build.VERSION_CODES.M)
                 @Override
                 public void onClick(View v) {
-                    int pos = listRV.getChildLayoutPosition(v);
-//                    Log.d(TAG, "onClick: " + pos);
-                    int id = pos + 1;
+                    int id = tvh.id;
+                    Log.d(TAG, "onClick: " + id);
                     setDone(id);
-                    updateRV();
                 }
             });
-            TaskViewHolder tvh = new TaskViewHolder(itemView);
             return tvh;
         }
 
         @Override
         public void onBindViewHolder(TaskViewHolder holder, int position) {
 //            Log.d(TAG, "onBindViewHolder: " + position);
-            holder.taskName.setText(tasksList.get(position).getTaskID() + ") " + tasksList.get(position).getTaskName());
+            holder.taskName.setText(tasksList.get(position).getTaskName());
             holder.taskDate.setText(tasksList.get(position).getDeadline());
-
+            holder.id = tasksList.get(position).getTaskID();
+            Log.d(TAG, "onBindViewHolder: " + tasksList.get(position).getTaskID());
             if(tasksList.get(position).isDone()){
                 holder.taskDate.setTextColor(getColor(R.color.colorAccent));
                 holder.taskName.setTextColor(getColor(R.color.colorAccent));
